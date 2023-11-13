@@ -1,0 +1,29 @@
+% Define the dimensions of the chessboard
+board_size(8).
+
+% Define valid knight moves
+knight_move(X, Y, NextX, NextY) :-
+    NextX is X + 1,
+    NextY is Y + 2.
+knight_move(X, Y, NextX, NextY) :-
+    NextX is X + 2,
+    NextY is Y + 1.
+
+% Define a predicate to find a knight's tour
+knight_tour(X, Y, N, Path) :-
+    board_size(N),
+    knight_tour(X, Y, N*N, [(X, Y)], Path).
+
+knight_tour(X, Y, N, Visited, Path) :-
+    N > 1,
+    N1 is N - 1,
+    knight_move(X, Y, NextX, NextY),
+    \+ member(NextX/NextY, Visited),
+    knight_tour(NextX, NextY, N1, [NextX/NextY | Visited], Path).
+
+% Find a knight's tour from (1,1) to (8,8)
+find_knights_tour(Path) :-
+    knight_tour(1, 1, 64, [(1, 1)], Path).
+
+% Example query to find the knight's tour
+?- find_knights_tour(Path).

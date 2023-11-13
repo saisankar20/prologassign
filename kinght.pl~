@@ -1,0 +1,111 @@
+% Define the chessboard size.
+board_size(8).
+
+% Valid knight moves.
+moves([(2, 1), (1, 2), (-1, 2), (-2, 1), (-2, -1), (-1, -2), (1, -2), (2, -1)]).
+
+% Check if a move is valid within the board.
+valid_move((X, Y)) :-
+    board_size(N),
+    X >= 1, Y >= 1, X =< N, Y =< N.
+
+% Calculate the number of unvisited neighbors for a given position.
+count_unvisited_neighbors(Pos, Visited, Count) :-
+    findall(Neighbor, (
+        member(Move, moves(Move)),
+        NextX is PosX + MoveX,
+        NextY is PosY + MoveY,
+        NewPos = (NextX, NextY),
+        valid_move(NewPos),
+        \+ member(NewPos, Visited)
+    ), Neighbors),
+    length(Neighbors, Count).
+
+% Find a valid tour from the current position.
+knight_tour(Start, Visited) :-
+    board_size(N),
+    knight_tour(Start, [Start], Visited, N * N).
+
+knight_tour(_, Visited, Visited, 0).
+
+knight_tour(CurrentPos, Visited, FullTour, MovesLeft) :-
+    MovesLeft > 0,
+    count_unvisited_neighbors(CurrentPos, Visited, NumUnvisited),
+    select_best_move(CurrentPos, Visited, NumUnvisited, NextPos),
+    knight_tour(NextPos, [NextPos | Visited], FullTour, MovesLeft - 1).
+
+% Select the next best move based on Warnsdorff's heuristic.
+select_best_move(CurrentPos, Visited, NumUnvisited, NextPos) :-
+    findall((NextPos, NumUnvisited), (
+        member(Move, moves(Move)),
+        NextX is CurrentPosX + MoveX,
+        NextY is CurrentPosY + MoveY,
+        NextPos = (NextX, NextY),
+        valid_move(NextPos),
+        \+ member(NextPos, Visited),
+        count_unvisited_neighbors(NextPos, Visited, NumUnvisited)
+    ), Candidates),
+    keysort(Candidates, SortedCandidates),
+    member(NextPos, SortedCandidates).
+
+% Utility predicate to solve the Knight's Tour problem.
+knight_tour_solve(Tour) :-
+    board_size(N),
+    Start = (1, 1),
+    knight_tour(Start, Tour),
+    reverse(Tour, ReversedTour),
+    format('Knight\'s Tour:\n', []),
+    print_board(ReversedTour).
+
+% Display the Knight's Tour on the chessboard.
+print_board(Tour) :-
+    board_size(N),
+    format('   |'),
+    print_column_labels(1, N),
+    format('\n---+'),
+    print_separator(N),
+    print_rows(Tour, 1, N).
+
+print_column_labels(N, N) :-
+    format(' ~d |', [N]), nl.
+
+print_column_labels(Col, N) :-
+    Col < N,
+    format(' ~d ', [Col]),
+    NextCol is Col + 1,
+    print_column_labels(NextCol, N).
+
+print_separator(1) :-
+    format('\n'), nl.
+
+print_separator(N) :-
+    N > 1,
+    format('---+', []),
+    NextN is N - 1,
+    print_separator(NextN).
+
+print_rows([], _, _).
+
+print_rows([Pos | Rest], Row, N) :-
+    format('\n ~d |', [Row]),
+    print_row(Pos, 1, N),
+    NextRow is Row + 1,
+    print_rows(Rest, NextRow, N).
+
+print_row(_, N, N) :-
+    format(' K |', []), nl.
+
+print_row(Pos, Col, N) :-
+    Col < N,
+    format_cell(Pos, (Col, _)),
+    NextCol is Col + 1,
+    print_row(Pos, NextCol, N).
+
+format_cell(Pos, Pos) :-
+    format(' K |', []).
+
+format_cell(_, _) :-
+    format(' . |', []).
+
+% Example usage:
+?- knight_tour_solve(Tour).
